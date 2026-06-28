@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Sora:wght@500;600;700;800&family=Hanken+Grotesk:wght@500;600;700;800&family=Saira+SemiCondensed:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  input::placeholder{color:#5f5f6a;}
+</style>
+</helmet>
+
+<div style="display:flex;height:100vh;width:100%;overflow:hidden;background:#050507;font-family:'Pretendard',-apple-system,system-ui,sans-serif;color:#e8e8ee;">
+
+  <aside style="width:372px;flex:none;height:100vh;overflow-y:auto;background:#0c0c10;border-right:1px solid rgba(255,255,255,.07);padding:26px;display:flex;flex-direction:column;gap:20px;">
+
+    <div>
+      <div style="font-family:'Archivo',sans-serif;font-size:19px;font-weight:700;letter-spacing:-.3px;">Album Card</div>
+      <div style="font-size:12.5px;color:#85858f;margin-top:5px;line-height:1.5;">커버에서 색을 뽑아 만드는<br>9:16 앨범 스토리 카드</div>
+    </div>
+
+    <div style="display:flex;gap:5px;background:#15151b;border-radius:12px;padding:5px;">
+      <button onClick="{{setOne}}" style="{{oneBtnStyle}}">앨범 1개</button>
+      <button onClick="{{setFour}}" style="{{fourBtnStyle}}">앨범 4개 · 2×2</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <input value="{{query}}" onChange="{{onQuery}}" placeholder="앨범 · 아티스트 검색 (예: NewJeans)" style="width:100%;background:#16161c;border:1px solid rgba(255,255,255,.09);border-radius:11px;padding:12px 14px;color:#fff;font-size:14px;font-family:'Pretendard';outline:none;" />
+      <sc-if value="{{searching}}" hint-placeholder-val="{{false}}"><div style="font-size:12px;color:#85858f;">검색 중…</div></sc-if>
+      <sc-if value="{{error}}" hint-placeholder-val=""><div style="font-size:12px;color:#ff7a8a;">{{error}}</div></sc-if>
+
+      <sc-if value="{{hasResults}}" hint-placeholder-val="{{false}}">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;max-height:264px;overflow-y:auto;padding:2px;">
+          <sc-for list="{{results}}" as="r" hint-placeholder-count="6">
+            <button onClick="{{r.add}}" title="클릭해서 추가" style="display:flex;flex-direction:column;gap:4px;background:none;border:0;padding:0;cursor:pointer;text-align:left;color:#e8e8ee;">
+              <div style="{{r.thumbStyle}}"></div>
+              <span style="font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{r.title}}</span>
+              <span style="font-size:10.5px;color:#85858f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{r.artist}}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{isFour}}" hint-placeholder-val="{{false}}">
+      <input value="{{header}}" onChange="{{onHeader}}" placeholder="상단 제목 (선택)" style="width:100%;background:#16161c;border:1px solid rgba(255,255,255,.09);border-radius:11px;padding:12px 14px;color:#fff;font-size:14px;font-family:'Pretendard';outline:none;" />
+    </sc-if>
+
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="font-size:12px;color:#85858f;font-weight:500;">선택된 앨범 · {{filledCount}}/{{slotCount}}</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <sc-for list="{{slotsView}}" as="s" hint-placeholder-count="1">
+          <div style="display:flex;align-items:center;gap:10px;background:#16161c;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:8px;">
+            <div style="position:relative;width:38px;height:38px;border-radius:7px;overflow:hidden;flex:none;background:linear-gradient(150deg,#4a2f8f,#241842);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.4);font-size:15px;">
+              <div style="{{s.thumbStyle}}"></div>
+              <sc-if value="{{s.empty}}" hint-placeholder-val="{{true}}"><span>♪</span></sc-if>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+              <span style="font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{s.listTitle}}</span>
+              <span style="font-size:11px;color:#85858f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{s.artist}}</span>
+            </div>
+            <sc-if value="{{s.filled}}" hint-placeholder-val="{{false}}">
+              <button onClick="{{s.remove}}" title="제거" style="width:26px;height:26px;border-radius:7px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#85858f;cursor:pointer;font-size:12px;flex:none;">✕</button>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <button onClick="{{download}}" style="margin-top:auto;border:0;border-radius:12px;padding:14px;font-size:14px;font-weight:600;font-family:'Pretendard';cursor:pointer;color:#fff;background:linear-gradient(135deg,#6d4dff,#a35cff);">{{saveLabel}}</button>
+  </aside>
+
+  <main ref="{{stageRef}}" style="flex:1;height:100vh;display:flex;align-items:center;justify-content:center;padding:40px;overflow:hidden;background:radial-gradient(circle at 50% 38%, #17171c, #050507 72%);">
+    <div style="width:{{frameW}}px;height:{{frameH}}px;border-radius:22px;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.6);flex:none;">
+      <div ref="{{storyRef}}" style="position:relative;width:1080px;height:1920px;transform:scale({{scale}});transform-origin:top left;background:#0a0a0e;overflow:hidden;">
+        <div style="position:absolute;inset:0;background:{{bgCss}};"></div>
+        <div style="position:absolute;inset:0;background:radial-gradient(120% 55% at 50% 6%, rgba(255,255,255,.05), transparent 42%);"></div>
+
+        <sc-if value="{{isOne}}" hint-placeholder-val="{{true}}">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:0 132px;">
+            <div style="position:relative;width:100%;aspect-ratio:1;border-radius:{{radius}}px;overflow:hidden;box-shadow:0 50px 120px rgba(0,0,0,.55);background:linear-gradient(150deg,#5a3aa8,#241842);">
+              <div style="{{hero.coverStyle}}"></div>
+              <sc-if value="{{hero.empty}}" hint-placeholder-val="{{true}}">
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:rgba(255,255,255,.6);">
+                  <div style="font-size:128px;line-height:1;">♪</div>
+                  <div style="font-family:'Archivo',sans-serif;font-size:26px;letter-spacing:.5px;">검색해서 커버 추가</div>
+                </div>
+              </sc-if>
+            </div>
+            <div style="font-family:{{displayFont}};font-weight:700;font-size:88px;line-height:1.02;letter-spacing:-1.5px;color:#fff;margin-top:62px;text-transform:{{titleTransform}};overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;word-break:break-word;">{{hero.title}}</div>
+            <div style="font-family:'Pretendard',sans-serif;font-weight:300;font-size:36px;color:rgba(255,255,255,.74);margin-top:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{hero.artistLine}}</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{isFour}}" hint-placeholder-val="{{false}}">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:96px 90px;">
+            <sc-if value="{{hasHeader}}" hint-placeholder-val="{{false}}"><div style="font-family:{{displayFont}};font-weight:700;font-size:50px;color:#fff;margin-bottom:42px;letter-spacing:-1px;">{{header}}</div></sc-if>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:54px;">
+              <sc-for list="{{slotsView}}" as="s" hint-placeholder-count="4">
+                <div style="display:flex;flex-direction:column;min-width:0;">
+                  <div style="position:relative;width:100%;aspect-ratio:1;border-radius:{{radius}}px;overflow:hidden;box-shadow:0 26px 60px rgba(0,0,0,.5);background:linear-gradient(150deg,#5a3aa8,#241842);">
+                    <div style="{{s.coverStyle}}"></div>
+                    <sc-if value="{{s.empty}}" hint-placeholder-val="{{true}}"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:64px;color:rgba(255,255,255,.5);">♪</div></sc-if>
+                  </div>
+                  <div style="font-family:{{displayFont}};font-weight:700;font-size:28px;letter-spacing:-.3px;line-height:1.16;color:#fff;margin-top:22px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;text-transform:{{titleTransform}};">{{s.gridTitle}}</div>
+                  <div style="font-family:'Pretendard',sans-serif;font-weight:300;font-size:21px;color:rgba(255,255,255,.62);margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{s.artistLine}}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:820},&quot;titleFont&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Archivo&quot;,&quot;Sora&quot;,&quot;Hanken Grotesk&quot;,&quot;Saira SemiCondensed&quot;],&quot;default&quot;:&quot;Hanken Grotesk&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;카드&quot;},&quot;coverRadius&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:30,&quot;min&quot;:0,&quot;max&quot;:56,&quot;step&quot;:2,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;카드&quot;},&quot;uppercaseTitle&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;카드&quot;},&quot;showAlbumTag&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;카드&quot;}}">
+class Component extends DCLogic {
+  DEFAULT = { accent:'hsl(276 78% 76%)', glow:'hsl(282 56% 36%)', mid:'hsl(268 46% 15%)', base:'hsl(262 40% 6%)', h:0.765, s:0.5 };
+
+  state = {
+    query:'', results:[], searching:false, error:'',
+    mode:'one', slots:[null], meta:{}, header:'',
+    scale:0.42, saving:false,
+  };
+
+  stageRef = React.createRef();
+  storyRef = React.createRef();
+
+  componentDidMount(){
+    this._fit = () => this.fit();
+    window.addEventListener('resize', this._fit);
+    requestAnimationFrame(this._fit);
+    setTimeout(this._fit, 80);
+    setTimeout(this._fit, 400);
+  }
+  componentWillUnmount(){
+    window.removeEventListener('resize', this._fit);
+    clearTimeout(this._t);
+  }
+
+  fit(){
+    const el = this.stageRef.current; if(!el) return;
+    const r = el.getBoundingClientRect();
+    const s = Math.min((r.width-80)/1080, (r.height-80)/1920);
+    if(s>0 && Math.abs(s-this.state.scale)>0.002) this.setState({scale:s});
+  }
+
+  setMode(mode){
+    const n = mode==='four'?4:1;
+    this.setState(st=>{
+      const filled = st.slots.filter(Boolean);
+      const slots = Array.from({length:n}, (_,i)=> filled[i]||null);
+      return {mode, slots};
+    });
+  }
+
+  onQuery(e){
+    const query = e.target.value;
+    this.setState({query});
+    clearTimeout(this._t);
+    if(!query.trim()){ this.setState({results:[], error:'', searching:false}); return; }
+    this.setState({searching:true, error:''});
+    this._t = setTimeout(()=>{
+      this.search(query).then(results=>this.setState({results, searching:false}))
+        .catch(()=>this.setState({results:[], searching:false, error:'검색에 실패했어요. 다시 시도해 주세요.'}));
+    }, 420);
+  }
+
+  search(term, limit=18){
+    return new Promise((resolve, reject)=>{
+      const cb = '__itc_'+Date.now()+'_'+Math.floor(Math.random()*1e5);
+      const script = document.createElement('script');
+      const to = setTimeout(()=>{ cleanup(); reject(new Error('timeout')); }, 10000);
+      function cleanup(){ clearTimeout(to); try{delete window[cb];}catch(e){} script.remove(); }
+      window[cb] = (data)=>{
+        cleanup();
+        const items = (data.results||[]).map(r=>({
+          id: r.collectionId,
+          title: r.collectionName,
+          artist: r.artistName,
+          cover: (r.artworkUrl100||'').replace('100x100bb','600x600bb'),
+        })).filter(x=>x.cover);
+        resolve(items);
+      };
+      const p = new URLSearchParams({ term, media:'music', entity:'album', limit:String(limit), callback:cb });
+      script.src = 'https://itunes.apple.com/search?'+p.toString();
+      script.onerror = ()=>{ cleanup(); reject(new Error('fail')); };
+      document.body.appendChild(script);
+    });
+  }
+
+  addAlbum(album){
+    this.setState(st=>{
+      const slots=[...st.slots];
+      const idx=slots.findIndex(s=>!s);
+      if(idx===-1) slots[slots.length-1]=album; else slots[idx]=album;
+      return {slots};
+    });
+    this.ensureMeta(album);
+  }
+
+  removeSlot(i){
+    this.setState(st=>{ const slots=[...st.slots]; slots[i]=null; return {slots}; });
+  }
+
+  ensureMeta(a){
+    if(!a || this.state.meta[a.id]) return;
+    this.extract(a.cover).then(m=>this.setState(st=>({meta:{...st.meta,[a.id]:m}})));
+  }
+
+  rgb2hsl(r,g,b){
+    r/=255; g/=255; b/=255;
+    const mx=Math.max(r,g,b), mn=Math.min(r,g,b);
+    let h=0,s=0,l=(mx+mn)/2; const d=mx-mn;
+    if(d){
+      s = l>0.5 ? d/(2-mx-mn) : d/(mx+mn);
+      if(mx===r) h=((g-b)/d+(g<b?6:0));
+      else if(mx===g) h=(b-r)/d+2;
+      else h=(r-g)/d+4;
+      h/=6;
+    }
+    return [h,s,l];
+  }
+
+  buildPaletteHSL(h, s){
+    const H=Math.round(h*360);
+    return {
+      accent:`hsl(${H} ${Math.round(Math.min(0.92, s+0.2)*100)}% 73%)`,
+      glow:`hsl(${H} ${Math.round(s*100)}% 34%)`,
+      mid:`hsl(${H} ${Math.round(s*72)}% 13%)`,
+      base:`hsl(${H} ${Math.round(s*46)}% 5.5%)`,
+      h, s,
+    };
+  }
+
+  extract(src){
+    return new Promise(res=>{
+      const img=new Image(); img.crossOrigin='anonymous';
+      img.onload=()=>{
+        let pal=this.DEFAULT, data=null;
+        try{
+          const N=40, c=document.createElement('canvas'); c.width=N; c.height=N;
+          const x=c.getContext('2d'); x.drawImage(img,0,0,N,N);
+          const d=x.getImageData(0,0,N,N).data;
+          const NB=24; const buckets=new Array(NB).fill(0).map(()=>({w:0,ssum:0,c:0}));
+          let ar=0,ag=0,ab=0,n=0,sSum=0,energy=0;
+          for(let i=0;i<d.length;i+=4){
+            const r=d[i],g=d[i+1],b=d[i+2],a=d[i+3]; if(a<200)continue;
+            ar+=r; ag+=g; ab+=b; n++;
+            const hsl=this.rgb2hsl(r,g,b);
+            sSum += hsl[1];
+            // weight hue buckets by saturation SQUARED so faint JPEG chroma noise
+            // (e.g. in a black-and-white scan) contributes almost nothing
+            if(hsl[1]>0.2 && hsl[2]>0.12 && hsl[2]<0.9){
+              const w = hsl[1]*hsl[1];
+              const bi=Math.round(hsl[0]*NB)%NB;
+              const e=buckets[bi];
+              e.w += w; e.ssum += hsl[1]; e.c++; energy += w;
+            }
+          }
+          if(n){
+            const avgS = sSum/n;
+            // colourful only if the image carries real chroma overall AND in energy
+            if(avgS > 0.16 && energy/n > 0.04){
+              let bi=0, bw=-1;
+              for(let k=0;k<NB;k++){ if(buckets[k].w>bw){ bw=buckets[k].w; bi=k; } }
+              const e=buckets[bi];
+              const hue=bi/NB;
+              const sat=Math.min(0.85, Math.max(0.32, e.ssum/Math.max(1,e.c)));
+              pal=this.buildPaletteHSL(hue, sat);
+            } else {
+              // monochrome / pencil-drawing cover -> neutral background
+              const avg=this.rgb2hsl(ar/n,ag/n,ab/n);
+              pal=this.buildPaletteHSL(avg[0], Math.min(0.08, avg[1]));
+            }
+          }
+          const big=document.createElement('canvas'); big.width=600; big.height=600;
+          big.getContext('2d').drawImage(img,0,0,600,600);
+          data=big.toDataURL('image/jpeg',0.92);
+        }catch(e){}
+        res({pal,data});
+      };
+      img.onerror=()=>res({pal:this.DEFAULT,data:null});
+      img.src=src;
+    });
+  }
+
+  buildBg(){
+    const {mode, slots, meta} = this.state;
+    const pal = (s)=> (s && meta[s.id] && meta[s.id].pal) || null;
+    if(mode==='one'){
+      const p = pal(slots[0]) || this.DEFAULT;
+      return `radial-gradient(125% 88% at 50% 30%, ${p.glow} 0%, ${p.mid} 46%, ${p.base} 82%)`;
+    }
+    const pos=[['24%','24%'],['76%','24%'],['24%','70%'],['76%','70%']];
+    const layers = slots.map((s,i)=>{ const p=pal(s)||this.DEFAULT; return `radial-gradient(58% 44% at ${pos[i][0]} ${pos[i][1]}, ${p.glow} 0%, transparent 70%)`; });
+    const ps = slots.map(s=>pal(s)).filter(Boolean);
+    let h=this.DEFAULT.h, s=0.4;
+    if(ps.length){ h=ps.reduce((a,p)=>a+p.h,0)/ps.length; s=ps.reduce((a,p)=>a+p.s,0)/ps.length; }
+    const base = `hsl(${Math.round(h*360)} ${Math.round(Math.max(16,Math.min(42,s*60)))}% 6%)`;
+    return layers.join(', ') + ', ' + base;
+  }
+
+  download(){
+    if(this.state.saving) return;
+    const node=this.storyRef.current;
+    if(!node || !window.htmlToImage){ return; }
+    this.setState({saving:true});
+    window.htmlToImage.toPng(node,{
+      width:1080, height:1920, pixelRatio:2, cacheBust:true,
+      style:{ transform:'none', transformOrigin:'top left' },
+    }).then(url=>{
+      const a=document.createElement('a'); a.href=url; a.download='album-card-'+Date.now()+'.png'; a.click();
+    }).catch(()=>{
+      alert('이미지 저장에 실패했어요. 외부 커버 이미지의 보안 정책 때문일 수 있어요.');
+    }).finally(()=>this.setState({saving:false}));
+  }
+
+  coverFill(url){
+    return url
+      ? { position:'absolute', inset:'0', backgroundImage:`url("${url}")`, backgroundSize:'cover', backgroundPosition:'center' }
+      : { display:'none' };
+  }
+
+  segStyle(active){
+    return {
+      flex:1, border:0, borderRadius:'8px', padding:'10px 6px',
+      fontFamily:"'Pretendard',sans-serif", fontSize:'13px', fontWeight:600, cursor:'pointer',
+      transition:'background .2s, color .2s',
+      background: active ? 'linear-gradient(135deg,#6d4dff,#a35cff)' : 'transparent',
+      color: active ? '#fff' : '#9a9aa6',
+    };
+  }
+
+  renderVals(){
+    const st = this.state;
+    const tag = (this.props.showAlbumTag ?? true) ? ' · 앨범' : '';
+    const radius = this.props.coverRadius ?? 30;
+    const titleTransform = (this.props.uppercaseTitle ?? true) ? 'uppercase' : 'none';
+    const fontMap = {
+      'Archivo': "'Archivo','Pretendard',sans-serif",
+      'Sora': "'Sora','Pretendard',sans-serif",
+      'Hanken Grotesk': "'Hanken Grotesk','Pretendard',sans-serif",
+      'Saira SemiCondensed': "'Saira SemiCondensed','Pretendard',sans-serif",
+    };
+    const displayFont = fontMap[this.props.titleFont] || fontMap['Archivo'];
+
+    const slotsView = st.slots.map((a,i)=>{
+      const filled=!!a; const m=a&&st.meta[a.id];
+      const accent=(m&&m.pal&&m.pal.accent)||this.DEFAULT.accent;
+      const cover = filled ? ((m&&m.data)||a.cover) : '';
+      return {
+        filled, empty:!filled,
+        cover,
+        coverStyle: this.coverFill(cover),
+        thumbStyle: this.coverFill(cover),
+        listTitle: filled ? a.title : '비어 있음',
+        gridTitle: filled ? a.title : ('앨범 '+(i+1)),
+        artist: filled ? a.artist : '',
+        artistLine: filled ? (a.artist+tag) : '검색으로 추가',
+        accent,
+        remove: ()=>this.removeSlot(i),
+      };
+    });
+
+    const a0 = st.slots[0]; const m0 = a0 && st.meta[a0.id];
+    const hero = {
+      filled: !!a0, empty: !a0,
+      cover: a0 ? ((m0&&m0.data)||a0.cover) : '',
+      coverStyle: this.coverFill(a0 ? ((m0&&m0.data)||a0.cover) : ''),
+      title: a0 ? a0.title : 'ESSENCE',
+      artistLine: a0 ? (a0.artist+tag) : 'GLOWCEAN · 앨범',
+      accent: (m0&&m0.pal&&m0.pal.accent)||this.DEFAULT.accent,
+    };
+
+    const scale = st.scale || 0.42;
+
+    return {
+      query: st.query,
+      onQuery: (e)=>this.onQuery(e),
+      searching: st.searching,
+      error: st.error,
+      hasResults: st.results.length>0,
+      results: st.results.map(r=>({ ...r, add: ()=>this.addAlbum(r), thumbStyle: { width:'100%', aspectRatio:'1', borderRadius:'8px', background:'#1c1c22', backgroundImage:`url("${r.cover}")`, backgroundSize:'cover', backgroundPosition:'center' } })),
+      oneBtnStyle: this.segStyle(st.mode==='one'),
+      fourBtnStyle: this.segStyle(st.mode==='four'),
+      setOne: ()=>this.setMode('one'),
+      setFour: ()=>this.setMode('four'),
+      isOne: st.mode==='one',
+      isFour: st.mode==='four',
+      header: st.header,
+      hasHeader: !!st.header.trim(),
+      onHeader: (e)=>this.setState({header:e.target.value}),
+      slotsView,
+      filledCount: st.slots.filter(Boolean).length,
+      slotCount: st.slots.length,
+      hero,
+      bgCss: this.buildBg(),
+      radius, titleTransform, displayFont,
+      scale, frameW: Math.round(1080*scale), frameH: Math.round(1920*scale),
+      stageRef: this.stageRef,
+      storyRef: this.storyRef,
+      saving: st.saving,
+      saveLabel: st.saving ? '저장 중…' : 'PNG로 저장 (1080×1920)',
+      download: ()=>this.download(),
+    };
+  }
+}
+</script>
+</body>
+</html>
