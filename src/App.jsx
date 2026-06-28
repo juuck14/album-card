@@ -138,6 +138,10 @@ export default function App() {
   const [header, setHeader] = useState('')
   const [scale, setScale] = useState(0.42)
   const [saving, setSaving] = useState(false)
+  const [showManual, setShowManual] = useState(false)
+  const [mTitle, setMTitle] = useState('')
+  const [mArtist, setMArtist] = useState('')
+  const [mCover, setMCover] = useState('')  // data URL
 
   const stageRef = useRef(null)
   const storyRef = useRef(null)
@@ -196,6 +200,26 @@ export default function App() {
     ensureMeta(album)
   }
 
+  function onManualFile(e) {
+    const file = e.target.files && e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setMCover(String(reader.result || ''))
+    reader.readAsDataURL(file)
+  }
+
+  function addManual() {
+    if (!mTitle.trim() && !mCover) return
+    const album = {
+      id: `manual-${Date.now()}`,
+      title: mTitle.trim() || '제목 없음',
+      artist: mArtist.trim() || '',
+      cover: mCover || '',
+    }
+    addAlbum(album)
+    setMTitle(''); setMArtist(''); setMCover(''); setShowManual(false)
+  }
+
   function removeSlot(i) {
     setSlots((prev) => { const s = [...prev]; s[i] = null; return s })
   }
@@ -237,7 +261,7 @@ export default function App() {
       listTitle: filled ? a.title : '비어 있음',
       gridTitle: filled ? a.title : `앨범 ${i + 1}`,
       artist: filled ? a.artist : '',
-      artistLine: filled ? `${a.artist} · 앨범` : '검색으로 추가',
+      artistLine: filled ? a.artist : '검색으로 추가',
       accent: (m && m.pal && m.pal.accent) || DEFAULT_PAL.accent,
       remove: () => removeSlot(i),
     }
@@ -248,7 +272,7 @@ export default function App() {
     empty: !a0,
     coverStyle: coverFill(a0 ? ((m0 && m0.data) || a0.cover) : ''),
     title: a0 ? a0.title : 'ESSENCE',
-    artistLine: a0 ? `${a0.artist} · 앨범` : 'GLOWCEAN · 앨범',
+    artistLine: a0 ? a0.artist : 'GLOWCEAN',
   }
 
   const frameW = Math.round(1080 * scale)
@@ -283,15 +307,48 @@ export default function App() {
           {error && <div style={{ fontSize: 12, color: '#ff7a8a' }}>{error}</div>}
 
           {results.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 9, maxHeight: 264, overflowY: 'auto', padding: 2 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 300, overflowY: 'auto', padding: 2 }}>
               {results.map((r) => (
                 <button key={r.id} onClick={() => addAlbum(r)} title="클릭해서 추가"
-                  style={{ display: 'flex', flexDirection: 'column', gap: 4, background: 'none', border: 0, padding: 0, cursor: 'pointer', textAlign: 'left', color: '#e8e8ee' }}>
-                  <div style={{ width: '100%', aspectRatio: '1', borderRadius: 8, background: '#1c1c22', backgroundImage: `url("${r.cover}")`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                  <span style={{ fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</span>
-                  <span style={{ fontSize: 10.5, color: '#85858f', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.artist}</span>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#16161c', border: '1px solid rgba(255,255,255,.06)', borderRadius: 9, padding: 7, cursor: 'pointer', textAlign: 'left', color: '#e8e8ee', transition: 'background .15s, border-color .15s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#1d1d25'; e.currentTarget.style.borderColor = 'rgba(163,92,255,.4)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = '#16161c'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.06)' }}>
+                  <div style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 6, background: '#1c1c22', backgroundImage: `url("${r.cover}")`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</span>
+                    <span style={{ fontSize: 11, color: '#85858f', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.artist}</span>
+                  </div>
+                  <span style={{ flexShrink: 0, color: '#a35cff', fontSize: 18, fontWeight: 600, paddingRight: 4 }}>+</span>
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* manual add */}
+          <button onClick={() => setShowManual((v) => !v)}
+            style={{ alignSelf: 'flex-start', background: 'none', border: 0, padding: 0, color: '#a35cff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: "'Pretendard'" }}>
+            {showManual ? '× 직접 추가 닫기' : '+ 검색에 없어요? 직접 추가'}
+          </button>
+
+          {showManual && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, background: '#121218', border: '1px solid rgba(255,255,255,.08)', borderRadius: 11, padding: 12 }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <label style={{ position: 'relative', width: 60, height: 60, flexShrink: 0, borderRadius: 8, overflow: 'hidden', cursor: 'pointer', background: '#1c1c22', backgroundImage: mCover ? `url("${mCover}")` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed rgba(255,255,255,.18)' }}>
+                  {!mCover && <span style={{ color: '#85858f', fontSize: 22 }}>＋</span>}
+                  <input type="file" accept="image/*" onChange={onManualFile} style={{ display: 'none' }} />
+                </label>
+                <div style={{ flex: 1, minWidth: 0, fontSize: 11.5, color: '#85858f', lineHeight: 1.5 }}>
+                  커버 이미지를<br />클릭해서 업로드
+                </div>
+              </div>
+              <input value={mTitle} onChange={(e) => setMTitle(e.target.value)} placeholder="앨범 제목"
+                style={{ width: '100%', background: '#16161c', border: '1px solid rgba(255,255,255,.09)', borderRadius: 9, padding: '10px 12px', color: '#fff', fontSize: 13, fontFamily: "'Pretendard'", outline: 'none' }} />
+              <input value={mArtist} onChange={(e) => setMArtist(e.target.value)} placeholder="아티스트"
+                style={{ width: '100%', background: '#16161c', border: '1px solid rgba(255,255,255,.09)', borderRadius: 9, padding: '10px 12px', color: '#fff', fontSize: 13, fontFamily: "'Pretendard'", outline: 'none' }} />
+              <button onClick={addManual} disabled={!mTitle.trim() && !mCover}
+                style={{ border: 0, borderRadius: 9, padding: 11, fontSize: 13, fontWeight: 600, fontFamily: "'Pretendard'", cursor: 'pointer', color: '#fff', background: 'linear-gradient(135deg,#6d4dff,#a35cff)', opacity: (!mTitle.trim() && !mCover) ? 0.45 : 1 }}>
+                추가하기
+              </button>
             </div>
           )}
         </div>
@@ -373,8 +430,8 @@ export default function App() {
                         <div style={s.coverStyle} />
                         {s.empty && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 64, color: 'rgba(255,255,255,.5)' }}>♪</div>}
                       </div>
-                      <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 28, letterSpacing: '-.3px', lineHeight: 1.16, color: '#fff', marginTop: 22, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', wordBreak: 'break-word', textTransform: 'uppercase' }}>{s.gridTitle}</div>
-                      <div style={{ fontFamily: "'Pretendard',sans-serif", fontWeight: 300, fontSize: 21, color: 'rgba(255,255,255,.62)', marginTop: 7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.artistLine}</div>
+                      <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 32, letterSpacing: '-.3px', lineHeight: 1.16, color: '#fff', marginTop: 22, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', wordBreak: 'break-word', textTransform: 'uppercase' }}>{s.gridTitle}</div>
+                      <div style={{ fontFamily: "'Pretendard',sans-serif", fontWeight: 300, fontSize: 24, color: 'rgba(255,255,255,.62)', marginTop: 7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.artistLine}</div>
                     </div>
                   ))}
                 </div>
