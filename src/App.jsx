@@ -245,7 +245,7 @@ export default function App() {
   const isFour = mode === 'four'
   const bgCss  = buildBg(slots, meta)
   const radius = 30
-  const displayFont = "'Archivo','Pretendard',sans-serif"
+  const displayFont = "'Hanken Grotesk','Pretendard',sans-serif"
   const filledCount = slots.filter(Boolean).length
 
   const slotsView = slots.map((a, i) => {
